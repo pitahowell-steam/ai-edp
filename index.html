@@ -2,53 +2,59 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Real AI Engineer: Apple vs Tomato</title>
+    <title>AI Engineer Lab: Confidence Mode</title>
     <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); max-width: 900px; width: 100%; }
-        .status-bar { background: #fff3cd; padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: bold; border: 1px solid #ffeeba; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-        .zone { background: #fafafa; border: 2px solid #eaedf0; padding: 20px; border-radius: 12px; }
-        img { width: 100%; height: 200px; object-fit: contain; background: #eee; margin: 10px 0; border-radius: 8px; border: 1px solid #ddd; }
-        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; margin: 8px 0; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s; }
-        .btn-apple { background: #43a047; color: white; }
-        .btn-tomato { background: #e53935; color: white; }
-        .btn-train { background: #1e88e5; color: white; font-size: 1.1em; }
-        .btn-train:disabled { background: #ccc; cursor: not-allowed; }
-        #result-text { font-size: 1.8em; text-align: center; margin-top: 15px; color: #333; }
-        .loader { color: #856404; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f9; color: #333; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 950px; width: 100%; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px; }
+        .zone { background: #ffffff; border: 2px solid #e0e6ed; padding: 20px; border-radius: 15px; position: relative; }
+        .status-header { background: #2c3e50; color: white; padding: 15px; border-radius: 10px; width: 100%; text-align: center; margin-bottom: 20px; font-weight: bold; }
+        img { width: 100%; height: 220px; object-fit: contain; background: #f8f9fa; border-radius: 10px; border: 1px solid #dee2e6; margin: 10px 0; }
+        input { width: 100%; padding: 12px; border: 2px solid #cbd5e0; border-radius: 8px; margin-bottom: 10px; }
+        button { width: 100%; padding: 14px; margin: 5px 0; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: transform 0.1s; }
+        button:active { transform: scale(0.98); }
+        .btn-apple { background: #27ae60; color: white; }
+        .btn-tomato { background: #e74c3c; color: white; }
+        .btn-train { background: #3498db; color: white; font-size: 1.1em; }
+        .btn-train:disabled { background: #bdc3c7; cursor: not-allowed; }
+        
+        /* Confidence Bar Styling */
+        .confidence-container { margin-top: 20px; display:none; }
+        .bar-bg { background: #edf2f7; border-radius: 10px; height: 25px; width: 100%; overflow: hidden; border: 1px solid #cbd5e0; }
+        #bar-fill { background: #3498db; height: 100%; width: 0%; transition: width 0.5s ease-out; }
+        #result-text { font-size: 1.5em; font-weight: bold; margin-bottom: 5px; text-align: center; }
+        .edp-hint { font-size: 0.9em; color: #718096; font-style: italic; text-align: center; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🍎 Machine Learning Lab: EDP 🍅</h1>
-    <div id="status" class="status-bar loader">Step 1: Loading Neural Network (MobileNet)...</div>
-
+    <div id="status" class="status-header">Initializing AI Engine...</div>
+    
     <div class="grid">
         <div class="zone">
-            <h2>Phase 1: Train (Create)</h2>
-            <p>Paste an image URL to teach the AI:</p>
-            <input type="text" id="img-url" placeholder="Paste Image Link Here...">
-            <img id="preview" src="https://placehold.co/400x200?text=Image+Preview" crossorigin="anonymous">
-            
-            <button class="btn-apple" onclick="addSample('Apple')">Add as APPLE</button>
-            <button class="btn-tomato" onclick="addSample('Tomato')">Add as TOMATO</button>
-            
-            <p>Training Samples: <b id="amount">0</b></p>
-            <button class="btn-train" id="train-btn" onclick="trainModel()" disabled>Run Training Engine</button>
+            <h3>Step 1: Create Data</h3>
+            <input type="text" id="train-url" placeholder="Paste Image URL here...">
+            <img id="train-preview" src="https://placehold.co/400x220?text=Paste+URL+to+Preview" crossorigin="anonymous">
+            <button class="btn-apple" onclick="addSample('Apple')">Label as APPLE</button>
+            <button class="btn-tomato" onclick="addSample('Tomato')">Label as TOMATO</button>
+            <p style="text-align:center">Training Set: <b id="count">0</b> images</p>
+            <button class="btn-train" id="train-btn" onclick="train()" disabled>Start Machine Learning</button>
         </div>
 
         <div class="zone">
-            <h2>Phase 2: Test (Evaluate)</h2>
-            <p>Paste a NEW URL to test the model:</p>
-            <input type="text" id="test-url" placeholder="Paste Test Link Here...">
-            <img id="test-preview" src="https://placehold.co/400x200?text=Test+Preview" crossorigin="anonymous">
+            <h3>Step 2: Evaluate Model</h3>
+            <input type="text" id="test-url" placeholder="Paste Test URL here...">
+            <img id="test-preview" src="https://placehold.co/400x220?text=Test+Image+Preview" crossorigin="anonymous">
+            <button onclick="predict()" style="background:#2c3e50; color:white;">Run Prediction</button>
             
-            <button onclick="predict()" style="background:#546e7a; color:white;">Does the AI know what this is?</button>
-            <div id="result-text">---</div>
+            <div class="confidence-container" id="conf-box">
+                <div id="result-text">---</div>
+                <div class="bar-bg"><div id="bar-fill"></div></div>
+                <p id="conf-label" style="text-align:right; font-size:0.8em; margin-top:5px;">Confidence: 0%</p>
+                <div id="edp-advice" class="edp-hint"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -56,53 +62,60 @@
 <script>
     let featureExtractor;
     let classifier;
-    let count = 0;
+    let samples = 0;
 
-    // Load MobileNet - a pre-trained "brain" that already understands shapes
+    // Load MobileNet
     featureExtractor = ml5.featureExtractor('MobileNet', () => {
-        document.getElementById('status').innerText = "✅ AI Ready! Start adding images.";
-        document.getElementById('status').style.background = "#d4edda";
-        document.getElementById('status').style.color = "#155724";
+        document.getElementById('status').innerText = "✅ AI Ready: Start Training Your Model";
         classifier = featureExtractor.classification();
     });
 
-    // Update image previews automatically when URLs are pasted
-    document.getElementById('img-url').oninput = (e) => document.getElementById('preview').src = e.target.value;
+    // Auto-update previews
+    document.getElementById('train-url').oninput = (e) => document.getElementById('train-preview').src = e.target.value;
     document.getElementById('test-url').oninput = (e) => document.getElementById('test-preview').src = e.target.value;
 
     function addSample(label) {
-        const img = document.getElementById('preview');
-        classifier.addImage(img, label);
-        count++;
-        document.getElementById('amount').innerText = count;
-        if(count > 3) document.getElementById('train-btn').disabled = false;
+        classifier.addImage(document.getElementById('train-preview'), label);
+        samples++;
+        document.getElementById('count').innerText = samples;
+        if(samples >= 4) document.getElementById('train-btn').disabled = false;
     }
 
-    function trainModel() {
-        document.getElementById('status').innerText = "🧠 Training... The AI is finding patterns in the pixels!";
-        document.getElementById('status').style.background = "#cce5ff";
-        
-        classifier.train((lossValue) => {
-            if (!lossValue) {
-                document.getElementById('status').innerText = "✅ Training Complete! Try the Test phase.";
-                document.getElementById('status').style.background = "#d4edda";
-            }
+    function train() {
+        document.getElementById('status').innerText = "🧠 Learning Patterns... Please Wait.";
+        classifier.train((loss) => {
+            if(!loss) document.getElementById('status').innerText = "✅ Training Finished! Move to Step 2.";
         });
     }
 
     function predict() {
-        const testImg = document.getElementById('test-preview');
-        classifier.classify(testImg, (err, results) => {
-            if (err) {
-                document.getElementById('result-text').innerText = "Error (Try a Wikipedia Link)";
+        classifier.classify(document.getElementById('test-preview'), (err, results) => {
+            if(err) return alert("CORS Error: Try a Wikipedia link!");
+            
+            const confBox = document.getElementById('conf-box');
+            const resText = document.getElementById('result-text');
+            const bar = document.getElementById('bar-fill');
+            const advice = document.getElementById('edp-advice');
+            
+            confBox.style.display = "block";
+            let label = results[0].label;
+            let confidence = results[0].confidence;
+            let percent = Math.round(confidence * 100);
+
+            resText.innerText = "Prediction: " + label;
+            bar.style.width = percent + "%";
+            document.getElementById('conf-label').innerText = "Confidence: " + percent + "%";
+
+            // EDP Feedback Logic
+            if(percent < 70) {
+                advice.innerText = "EDP Note: Low confidence! You need more diverse training images.";
+                bar.style.background = "#f1c40f";
             } else {
-                let label = results[0].label;
-                let conf = Math.round(results[0].confidence * 100);
-                document.getElementById('result-text').innerText = `${label} (${conf}%)`;
+                advice.innerText = "EDP Note: Strong pattern found! Does it pass the 'Trick' test?";
+                bar.style.background = "#27ae60";
             }
         });
     }
 </script>
-
 </body>
 </html>
