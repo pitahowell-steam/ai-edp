@@ -2,125 +2,101 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Visual ML Simulator: EDP Edition</title>
+    <title>Real AI Trainer: EDP Apple vs Tomato</title>
+    <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #eceff1; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 800px; width: 100%; }
+        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 900px; width: 100%; }
+        .setup-status { background: #fff3cd; padding: 10px; border-radius: 5px; margin-bottom: 10px; font-weight: bold; text-align: center; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .zone { border: 2px solid #cfd8dc; padding: 15px; border-radius: 10px; background: #f8f9fa; }
-        h2 { margin-top: 0; color: #37474f; font-size: 1.2em; border-bottom: 2px solid #ddd; padding-bottom: 5px; }
-        input, select, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
-        button { cursor: pointer; font-weight: bold; background: #2196f3; color: white; border: none; transition: 0.3s; }
-        button:hover { background: #1976d2; }
-        .gallery { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; max-height: 150px; overflow-y: auto; border: 1px inset #eee; padding: 5px; }
-        .gallery img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
-        #test-preview { width: 100%; height: 200px; object-fit: contain; background: #eee; border-radius: 8px; margin-bottom: 10px; display: none; }
-        #result { padding: 15px; text-align: center; font-weight: bold; border-radius: 8px; margin-top: 10px; }
-        .correct { background: #c8e6c9; color: #2e7d32; }
-        .wrong { background: #ffcdd2; color: #c62828; }
+        .zone { border: 2px solid #ddd; padding: 15px; border-radius: 8px; }
+        img { width: 100%; height: 150px; object-fit: contain; background: #eee; margin-bottom: 10px; border-radius: 5px; }
+        button { width: 100%; padding: 10px; margin: 5px 0; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; }
+        .btn-apple { background: #4caf50; color: white; }
+        .btn-tomato { background: #f44336; color: white; }
+        .btn-train { background: #2196f3; color: white; font-size: 1.1em; }
+        #result { margin-top: 15px; font-size: 1.5em; text-align: center; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🍎 Visual AI Engineer 🍅</h1>
-    <p><i>EDP Goal: Train a model that isn't "fooled" by color or quantity!</i></p>
+    <h1>🧠 Real AI: Apple vs. Tomato</h1>
+    <div id="status" class="setup-status">Loading Base Neural Network (MobileNet)...</div>
 
     <div class="grid">
         <div class="zone">
-            <h2>1. Create Training Data</h2>
-            <input type="text" id="train-url" placeholder="Paste Image URL here...">
-            <select id="train-color">
-                <option value="Red">Red</option>
-                <option value="Green">Green</option>
-            </select>
-            <select id="train-qty">
-                <option value="Single">Single Item</option>
-                <option value="Multiple">Multiple Items</option>
-            </select>
-            <select id="train-label">
-                <option value="Apple">Apple</option>
-                <option value="Tomato">Tomato</option>
-            </select>
-            <button onclick="addTrainingData()" style="background:#4caf50">Add to Dataset</button>
-            <div class="gallery" id="training-gallery"></div>
+            <h2>1. Train (Create)</h2>
+            <input type="text" id="img-url" placeholder="Paste Image URL..." style="width:94%; padding:8px;">
+            <img id="preview" src="https://placehold.co/300x150?text=Paste+URL+Above">
+            <button class="btn-apple" onclick="addSample('Apple')">Add as APPLE</button>
+            <button class="btn-tomato" onclick="addSample('Tomato')">Add as TOMATO</button>
+            <p>Samples: <span id="amount">0</span></p>
+            <hr>
+            <button class="btn-train" id="train-btn" onclick="trainModel()" disabled>Start Training</button>
         </div>
 
         <div class="zone">
-            <h2>2. Test the Model</h2>
-            <img id="test-preview" src="">
-            <input type="text" id="test-url" placeholder="Paste Test Image URL..." onchange="updatePreview()">
-            <select id="test-color">
-                <option value="Red">Red</option>
-                <option value="Green">Green</option>
-            </select>
-            <select id="test-qty">
-                <option value="Single">Single Item</option>
-                <option value="Multiple">Multiple Items</option>
-            </select>
-            <button onclick="runTest()">Run Prediction</button>
-            <div id="result">Waiting for test...</div>
+            <h2>2. Test (Improve)</h2>
+            <input type="text" id="test-url" placeholder="Paste Test Image URL..." style="width:94%; padding:8px;">
+            <img id="test-preview" src="https://placehold.co/300x150?text=Test+Image">
+            <button onclick="predict()" style="background:#607d8b; color:white;">Predict!</button>
+            <div id="result">---</div>
         </div>
     </div>
-    <button onclick="location.reload()" style="background:#607d8b; margin-top:15px;">Clear & Restart EDP</button>
 </div>
 
 <script>
-    let dataset = [];
+    let featureExtractor;
+    let classifier;
+    let count = 0;
 
-    function addTrainingData() {
-        const url = document.getElementById('train-url').value;
-        const color = document.getElementById('train-color').value;
-        const qty = document.getElementById('train-qty').value;
-        const label = document.getElementById('train-label').value;
-
-        if(!url) return alert("Please paste a URL!");
-
-        dataset.push({url, color, qty, label});
-        
-        const img = document.createElement('img');
-        img.src = url;
-        document.getElementById('training-gallery').appendChild(img);
-        document.getElementById('train-url').value = "";
+    // Initialize the Feature Extractor with MobileNet
+    featureExtractor = ml5.featureExtractor('MobileNet', modelReady);
+    
+    function modelReady() {
+        document.getElementById('status').innerText = "✅ Model Loaded! Ready to Train.";
+        document.getElementById('status').style.background = "#d4edda";
+        classifier = featureExtractor.classification();
     }
 
-    function updatePreview() {
-        const url = document.getElementById('test-url').value;
-        const preview = document.getElementById('test-preview');
-        preview.src = url;
-        preview.style.display = "block";
+    // Add Image Preview logic
+    document.getElementById('img-url').addEventListener('input', (e) => {
+        document.getElementById('preview').src = e.target.value;
+    });
+    document.getElementById('test-url').addEventListener('input', (e) => {
+        document.getElementById('test-preview').src = e.target.value;
+    });
+
+    function addSample(label) {
+        const img = document.getElementById('preview');
+        // We use a helper to ensure the image is loaded before adding
+        classifier.addImage(img, label);
+        count++;
+        document.getElementById('amount').innerText = count;
+        if(count > 2) document.getElementById('train-btn').disabled = false;
     }
 
-    function runTest() {
-        const color = document.getElementById('test-color').value;
-        const qty = document.getElementById('test-qty').value;
-        const resultDiv = document.getElementById('result');
+    function trainModel() {
+        document.getElementById('status').innerText = "Training... please wait.";
+        classifier.train((lossValue) => {
+            if (lossValue) {
+                console.log('Loss: ' + lossValue);
+            } else {
+                document.getElementById('status').innerText = "✅ Done Training! Go Test it.";
+            }
+        });
+    }
 
-        if(dataset.length === 0) {
-            resultDiv.innerText = "Error: No Training Data!";
-            return;
-        }
-
-        // SIMULATED ML LOGIC
-        // It looks for patterns in the training data based on features
-        const colorMatches = dataset.filter(d => d.color === color);
-        const qtyMatches = dataset.filter(d => d.qty === qty);
-
-        let prediction = "";
-        
-        // Priority logic: The AI "thinks" color is the most important feature (common in biased AI)
-        if (colorMatches.length > 0) {
-            const appleVotes = colorMatches.filter(d => d.label === 'Apple').length;
-            const tomatoVotes = colorMatches.filter(d => d.label === 'Tomato').length;
-            prediction = appleVotes >= tomatoVotes ? "Apple" : "Tomato";
-        } else {
-            // Fallback to most common item in dataset
-            const appleTotal = dataset.filter(d => d.label === 'Apple').length;
-            prediction = appleTotal >= (dataset.length / 2) ? "Apple" : "Tomato";
-        }
-
-        resultDiv.className = "wrong"; // Start as "wrong" until students justify
-        resultDiv.innerHTML = `AI PREDICTION: <br> <span style="font-size:1.5em">${prediction}</span><br><small>Reason: Most ${color} things I saw were ${prediction}s.</small>`;
+    function predict() {
+        const testImg = document.getElementById('test-preview');
+        classifier.classify(testImg, (err, result) => {
+            if (err) {
+                document.getElementById('result').innerText = "Error: Use a different URL (CORS)";
+            } else {
+                document.getElementById('result').innerText = result[0].label + " (" + (result[0].confidence * 100).toFixed(1) + "%)";
+            }
+        });
     }
 </script>
 </body>
