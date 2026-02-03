@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Simulator: Apple vs. Tomato</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f4f9; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 600px; width: 100%; }
+        h1 { color: #333; text-align: center; }
+        .training-zone, .testing-zone { border: 2px dashed #ccc; padding: 15px; margin: 10px 0; border-radius: 8px; }
+        .btn { padding: 10px 15px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .apple-btn { background: #4caf50; color: white; }
+        .tomato-btn { background: #f44336; color: white; }
+        .test-btn { background: #2196f3; color: white; width: 100%; margin-top: 10px; }
+        .stats { font-size: 0.9em; color: #666; }
+        #result-display { margin-top: 20px; padding: 15px; text-align: center; font-size: 1.2em; font-weight: bold; border-radius: 8px; min-height: 30px; }
+        .neutral { background: #eee; }
+        .correct { background: #d4edda; color: #155724; }
+        .wrong { background: #f8d7da; color: #721c24; }
+        .item-card { display: inline-block; padding: 5px 10px; background: #eee; margin: 2px; border-radius: 4px; font-size: 0.8em; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🍎 vs 🍅 ML Simulator</h1>
+    
+    <div class="training-zone">
+        <h3>Step 1: Train Your Model</h3>
+        <p class="stats">Data Samples: <span id="count">0</span></p>
+        <button class="btn apple-btn" onclick="train('Green', 'Apple')">Add Green Apple</button>
+        <button class="btn tomato-btn" onclick="train('Red', 'Tomato')">Add Red Tomato</button>
+        <div id="data-log" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="testing-zone">
+        <h3>Step 2: Test the Model</h3>
+        <p>What happens if we show the AI something new?</p>
+        <button class="btn test-btn" onclick="test('Red', 'Apple')">Test a RED APPLE</button>
+        <button class="btn test-btn" onclick="test('Green', 'Tomato')">Test a GREEN TOMATO</button>
+    </div>
+
+    <div id="result-display" class="neutral">Waiting for test...</div>
+    
+    <button class="btn" style="background:#666; color:white; margin-top:20px;" onclick="resetSim()">Reset Simulation</button>
+</div>
+
+<script>
+    let trainingData = [];
+
+    function train(color, label) {
+        trainingData.push({color, label});
+        document.getElementById('count').innerText = trainingData.length;
+        const log = document.getElementById('data-log');
+        const span = document.createElement('span');
+        span.className = 'item-card';
+        span.innerText = `${color} ${label}`;
+        log.appendChild(span);
+    }
+
+    function test(testColor, actualType) {
+        const display = document.getElementById('result-display');
+        
+        if (trainingData.length === 0) {
+            display.innerText = "Error: No training data!";
+            return;
+        }
+
+        // Simple ML Logic: It looks for the most common label for that color
+        const matches = trainingData.filter(d => d.color === testColor);
+        
+        let prediction = "";
+        if (matches.length === 0) {
+            // If it has never seen this color, it guesses based on the most common item overall
+            const appleCount = trainingData.filter(d => d.label === 'Apple').length;
+            const tomatoCount = trainingData.filter(d => d.label === 'Tomato').length;
+            prediction = appleCount >= tomatoCount ? "Apple" : "Tomato";
+        } else {
+            const appleMatches = matches.filter(d => d.label === 'Apple').length;
+            const tomatoMatches = matches.filter(d => d.label === 'Tomato').length;
+            prediction = appleMatches >= tomatoMatches ? "Apple" : "Tomato";
+        }
+
+        if (prediction === actualType) {
+            display.className = "correct";
+            display.innerText = `AI says: "${prediction}". Correct!`;
+        } else {
+            display.className = "wrong";
+            display.innerText = `AI says: "${prediction}". WRONG! (It thought ${testColor} always means ${prediction})`;
+        }
+    }
+
+    function resetSim() {
+        trainingData = [];
+        document.getElementById('count').innerText = "0";
+        document.getElementById('data-log').innerHTML = "";
+        const display = document.getElementById('result-display');
+        display.className = "neutral";
+        display.innerText = "Waiting for test...";
+    }
+</script>
+
+</body>
+</html>
