@@ -2,90 +2,96 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>AI Lab: Fix Version</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ml5/0.12.2/ml5.min.js"></script>
+    <title>AI Lab: Ultimate Fix</title>
+    <script src="https://cdn.jsdelivr.net/npm/ml5@0.12.2/dist/ml5.min.js"></script>
+    
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 600px; width: 100%; }
-        .status { background: #fff3cd; padding: 10px; margin-bottom: 20px; border-radius: 5px; font-weight: bold; text-align: center; }
-        img { width: 100%; height: 200px; object-fit: contain; background: #ddd; margin: 10px 0; }
-        button { padding: 10px; margin: 5px; cursor: pointer; width: 45%; font-weight: bold; }
-        #train-btn { width: 100%; background: #2196f3; color: white; border: none; margin-top: 10px; }
+        body { font-family: sans-serif; background: #eef2f3; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        #status-bar { width: 100%; max-width: 600px; padding: 15px; background: #ffd700; text-align: center; font-weight: bold; border-radius: 8px; margin-bottom: 10px; border: 2px solid #daa520; }
+        .box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 600px; }
+        img { width: 100%; height: 200px; object-fit: contain; background: #eee; border: 1px solid #ccc; margin: 10px 0; }
+        input { width: 100%; padding: 10px; box-sizing: border-box; margin-bottom: 10px; }
+        .row { display: flex; gap: 10px; }
+        button { flex: 1; padding: 12px; cursor: pointer; font-weight: bold; border: none; border-radius: 5px; }
+        .green { background: #4caf50; color: white; }
+        .red { background: #f44336; color: white; }
+        #train-btn { background: #2196f3; color: white; width: 100%; margin-top: 10px; }
+        #train-btn:disabled { background: #ccc; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div id="status" class="status">Step 1: Loading AI Brain...</div>
-    
-    <input type="text" id="url-input" placeholder="Paste Image URL..." style="width: 95%; padding: 8px;">
-    <img id="preview" crossorigin="anonymous" src="https://placehold.co/400x200?text=Waiting+for+URL">
-    
-    <div style="text-align: center;">
-        <button onclick="addSample('Apple')" style="background:#d4edda">Label Apple</button>
-        <button onclick="addSample('Tomato')" style="background:#f8d7da">Label Tomato</button>
+    <div id="status-bar">🚨 LOADING AI SYSTEM... (Please wait 5 seconds)</div>
+
+    <div class="box">
+        <h3>1. Training Phase</h3>
+        <input type="text" id="urlInput" placeholder="Paste HTTPS Image URL here...">
+        <img id="mainImg" crossorigin="anonymous" src="https://placehold.co/400x200?text=Waiting+for+URL">
+        
+        <div class="row">
+            <button class="green" onclick="handleLabel('Apple')">Label Apple</button>
+            <button class="red" onclick="handleLabel('Tomato')">Label Tomato</button>
+        </div>
+        
+        <p>Training Images Added: <b id="countVal">0</b></p>
+        <button id="train-btn" onclick="startTraining()" disabled>Start Training Engine</button>
+        
+        <hr style="margin: 20px 0;">
+        
+        <h3>2. Result</h3>
+        <button style="background: #555; color: white; width: 100%;" onclick="startPredict()">Ask the AI what this is</button>
+        <h2 id="finalResult" style="text-align: center; color: #333;">---</h2>
     </div>
-    
-    <p>Samples added: <b id="count">0</b></p>
-    <button id="train-btn" onclick="startTraining()" disabled>Train Model</button>
-    <button id="predict-btn" onclick="predict()" style="width:100%; margin-top:10px;" disabled>Check AI Guess</button>
-    
-    <h2 id="result" style="text-align: center;">---</h2>
-</div>
 
 <script>
-    // Define variables globally
-    let featureExtractor;
-    let classifier;
-    let count = 0;
+    let myClassifier;
+    let sampleCount = 0;
 
-    // Load the model
-    console.log("Attempting to load ml5...");
-    featureExtractor = ml5.featureExtractor('MobileNet', modelLoaded);
+    // Load the Feature Extractor
+    const featureExtractor = ml5.featureExtractor('MobileNet', () => {
+        console.log("MobileNet Loaded");
+        myClassifier = featureExtractor.classification();
+        document.getElementById('status-bar').innerText = "✅ AI SYSTEM ONLINE";
+        document.getElementById('status-bar').style.background = "#90ee90";
+    });
 
-    function modelLoaded() {
-        console.log("Model Loaded!");
-        document.getElementById('status').innerText = "✅ AI Brain Loaded!";
-        document.getElementById('status').style.background = "#d4edda";
-        classifier = featureExtractor.classification();
-    }
-
-    // Update image
-    document.getElementById('url-input').oninput = function() {
-        document.getElementById('preview').src = this.value;
+    // Handle URL input
+    document.getElementById('urlInput').oninput = function() {
+        document.getElementById('mainImg').src = this.value;
     };
 
-    // ADD SAMPLE FUNCTION
-    function addSample(label) {
-        if (!classifier) {
-            alert("AI is still loading. Wait for the green status bar!");
-            return;
-        }
-        const img = document.getElementById('preview');
-        classifier.addImage(img, label, () => {
-            count++;
-            document.getElementById('count').innerText = count;
-            if(count >= 3) document.getElementById('train-btn').disabled = false;
-        });
-    }
-
-    // TRAINING FUNCTION
-    function startTraining() {
-        document.getElementById('status').innerText = "🧠 Training... (Please wait)";
-        classifier.train((loss) => {
-            if (loss === null) {
-                document.getElementById('status').innerText = "✅ Training Ready!";
-                document.getElementById('predict-btn').disabled = false;
+    function handleLabel(labelName) {
+        if (!myClassifier) return alert("AI is still loading!");
+        
+        const currentImg = document.getElementById('mainImg');
+        myClassifier.addImage(currentImg, labelName, () => {
+            sampleCount++;
+            document.getElementById('countVal').innerText = sampleCount;
+            if (sampleCount >= 3) {
+                document.getElementById('train-btn').disabled = false;
             }
         });
     }
 
-    // PREDICT FUNCTION
-    function predict() {
-        const img = document.getElementById('preview');
-        classifier.classify(img, (err, res) => {
-            if (res) {
-                document.getElementById('result').innerText = res[0].label + " (" + Math.round(res[0].confidence * 100) + "%)";
+    function startTraining() {
+        document.getElementById('status-bar').innerText = "🧠 TRAINING... DO NOT CLOSE";
+        document.getElementById('status-bar').style.background = "#add8e6";
+        
+        myClassifier.train((loss) => {
+            if (loss === null) {
+                document.getElementById('status-bar').innerText = "✅ TRAINING COMPLETE";
+                document.getElementById('status-bar').style.background = "#90ee90";
+            }
+        });
+    }
+
+    function startPredict() {
+        const currentImg = document.getElementById('mainImg');
+        myClassifier.classify(currentImg, (err, results) => {
+            if (results) {
+                let name = results[0].label;
+                let conf = Math.round(results[0].confidence * 100);
+                document.getElementById('finalResult').innerText = name + " (" + conf + "%)";
             }
         });
     }
